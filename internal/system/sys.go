@@ -3,7 +3,6 @@ package system
 import (
 	"fmt"
 	"image"
-	"os"
 
 	"gioui.org/op/paint"
 	"github.com/sqweek/dialog"
@@ -19,10 +18,10 @@ type Browser struct {
 }
 
 func OpenDialog(startFilename string) (string, error) {
-	home, _ := os.UserHomeDir()
+	startDir, _ := GetDownloadsDir()
 
 	path, err := dialog.File().
-		SetStartDir(home + "\\Downloads").
+		SetStartDir(startDir).
 		SetStartFile(startFilename).
 		// Filter("Torrent file", "torrent").
 		Title("Save to").
@@ -31,6 +30,6 @@ func OpenDialog(startFilename string) (string, error) {
 		// fmt.Println("cancelled")
 		return "", fmt.Errorf("cancelled")
 	}
-	fmt.Println("Save to:", path)
+
 	return path, nil
 }

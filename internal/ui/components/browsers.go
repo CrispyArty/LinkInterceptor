@@ -24,7 +24,7 @@ type BrowserItem struct {
 	icon       paint.ImageOp
 	data       system.Browser
 	button     widget.Clickable
-	card       Card
+	card       CardButton
 	// onClick    func()
 }
 
@@ -115,13 +115,10 @@ func (t *BrowsersList) handleBrowserClick(bi *BrowserItem) {
 	fmt.Printf("cmd: %v\n", cmd)
 }
 
-func (t *BrowserItem) layout(mgtx uicore.Context) layout.Dimensions {
-	theme := mgtx.App.Theme()
-	// if t.button.Clicked(mgtx.Context) {
-	// 	t.onClick()
-	// }
+func (t *BrowserItem) layout(gtx layout.Context, theme *material.Theme) layout.Dimensions {
 
-	return t.card.Layout(mgtx.Context, &t.button, func(gtx layout.Context) layout.Dimensions {
+	return t.card.Layout(gtx, &t.button, func(gtx layout.Context) layout.Dimensions {
+
 		return layout.Flex{
 			Alignment: layout.Middle,
 		}.Layout(gtx,
@@ -155,15 +152,19 @@ func (t *BrowsersList) Layout(mgtx uicore.Context) layout.Dimensions {
 	// 		t.handleBrowserClick(b)
 	// 	}
 	// }
+	// if t.list.ScrollDistance() != 0 {
+	// 	cmd := op.InvalidateCmd{}
+	// 	mgtx.Execute(cmd)
+	// }
 
 	return material.List(theme, &t.list).Layout(mgtx.Context, len(t.browsers), func(gtx layout.Context, i int) layout.Dimensions {
-		return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 
-			if t.browsers[i].button.Clicked(mgtx.Context) {
+		return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			if t.browsers[i].button.Clicked(gtx) {
 				t.handleBrowserClick(t.browsers[i])
 			}
 
-			return t.browsers[i].layout(mgtx.With(gtx))
+			return t.browsers[i].layout(gtx, theme)
 		})
 	})
 }

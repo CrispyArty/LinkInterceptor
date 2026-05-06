@@ -3,6 +3,7 @@ package system
 import (
 	"cmp"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -16,7 +17,22 @@ var (
 	user32                   = windows.NewLazySystemDLL("user32.dll")
 	getForegroundWindow      = user32.NewProc("GetForegroundWindow")
 	getWindowThreadProcessId = user32.NewProc("GetWindowThreadProcessId")
+	getSystemMetrics         = user32.NewProc("GetSystemMetrics")
 )
+
+func GetDownloadsDir() (string, error) {
+	dir, err := windows.KnownFolderPath(windows.FOLDERID_Downloads, 0)
+	if err == nil {
+		return dir, nil
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(home, "Downloads"), nil
+}
 
 // func fallbackName(exePath string) string {
 // 	return exePath
@@ -94,6 +110,14 @@ func newBrowser(info appInfo) *Browser {
 		IconImage: iconImg,
 		ShellPath: info.shellPath,
 	}
+}
+
+// Get physical screen resolution
+func GetScreenSize() (int, int) {
+	// 0 is SM_CXSCREEN (Width), 1 is SM_CYSCREEN (Height)
+	w, _, _ := getSystemMetrics.Call(0)
+	h, _, _ := getSystemMetrics.Call(1)
+	return int(w), int(h)
 }
 
 func SplitWindowsArgs(cmdLine string) []string {

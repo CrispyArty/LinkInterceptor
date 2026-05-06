@@ -33,8 +33,17 @@ func (a *App) Router() *uicore.Router {
 }
 
 func NewApp(window *app.Window) *App {
-	window.Option(app.Title("Link Interceptor"))
-	window.Option(app.Size(unit.Dp(400), unit.Dp(600)))
+	winWidth := 400
+	winHeight := 600
+	// screenWidth, screenHeight := system.GetScreenSize()
+
+	// x := (screenWidth - winWidth) / 2
+	// y := (screenHeight - winHeight) / 2
+
+	window.Option(
+		app.Title("Link Interceptor"),
+		app.Size(unit.Dp(winWidth), unit.Dp(winHeight)),
+	)
 
 	args := os.Args // os.Args[0] = path to myapp exe, os.Args[1] = the URL
 

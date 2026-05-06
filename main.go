@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/crispyarty/LinkInterceptor/internal/system"
+	mSys "github.com/crispyarty/LinkInterceptor/internal/system"
 	"github.com/crispyarty/LinkInterceptor/internal/ui"
 	"github.com/crispyarty/LinkInterceptor/internal/ui/dispatch"
 	"github.com/crispyarty/LinkInterceptor/internal/ui/state"
@@ -51,10 +51,17 @@ func run(window *app.Window) (err error) {
 		}
 	}()
 
+	// var windowCreated = false
+
 	for {
 		select {
 		case evt := <-eventCh:
 			switch evt := evt.(type) {
+			// case app.ViewEvent:
+			// 	if !windowCreated {
+			// 		window.Perform(system.ActionCenter)
+			// 		windowCreated = true
+			// 	}
 			case app.FrameEvent:
 				gtx := uicore.Context{Context: app.NewContext(&ops, evt), App: appUi}
 				// gtx := app.NewContext(&ops, evt)
@@ -75,7 +82,7 @@ func run(window *app.Window) (err error) {
 }
 
 func fillState(state *state.State) {
-	if browsers, err := system.GetBrowsers(); err == nil {
+	if browsers, err := mSys.GetBrowsers(); err == nil {
 		// browsers = append(browsers, browsers...)
 		// browsers = append(browsers, browsers...)
 		// browsers = append(browsers, browsers...)
