@@ -74,8 +74,6 @@ func _saveUrlTo(url, dest string, onProgress func(bytes int64, percent float64),
 
 			isUpdating.Store(true)
 
-			log.Printf("updateProgress: %v | %v\n", bytes, percent)
-
 			dispatch.Actions <- func() {
 				defer isUpdating.Store(false)
 				onProgress(bytes, percent)
@@ -85,7 +83,6 @@ func _saveUrlTo(url, dest string, onProgress func(bytes int64, percent float64),
 		for {
 			select {
 			case <-ticker.C:
-				//
 				updateProgress(false)
 			case err := <-errs:
 				if err != nil {
@@ -121,16 +118,12 @@ func saveUrlTo(url, dest string, ui *DownloadCard) {
 }
 
 func (t *DownloadCard) handleSaveAsClick(url string, urlInfo *fetcher.UrlInfo) {
-	fmt.Printf("handleSaveAsClick\n")
-
 	if dir, err := system.OpenDialog(urlInfo.Filename); err == nil {
 		saveUrlTo(t.url, dir, t)
 	}
 }
 
 func (t *DownloadCard) handleSaveClick(url string, urlInfo *fetcher.UrlInfo) {
-	fmt.Printf("handleSaveClick\n")
-
 	if dir, err := system.GetDownloadsDir(); err == nil {
 		saveUrlTo(t.url, filepath.Join(dir, urlInfo.Filename), t)
 	}
@@ -140,7 +133,23 @@ func (t *DownloadCard) loading(gtx layout.Context, theme *material.Theme) layout
 	return material.Body1(theme, "Loading...").Layout(gtx)
 }
 
-func (t *DownloadCard) downloadableLink(gtx layout.Context, theme *material.Theme) layout.Dimensions {
+func (t *DownloadCard) doneActions(gtx layout.Context, theme *material.Theme) layout.Dimensions {
+	return layout.Flex{
+		Axis:    layout.Vertical,
+		Spacing: layout.SpaceStart,
+	}.Layout(gtx,
+	 	layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if !t.downloading {
+				// return layout.Dimensions{Size: image.Point{Y: 20}}
+				return layout.Dimensions{} // empty space before downloading begin
+			}
+			bar := material.ProgressBar(theme, float32(t.progressPercent/100))
+			return bar.Layout(gtx)
+		}),
+	 )
+}
+
+func (t *DownloadCard) downloadActions(gtx layout.Context, theme *material.Theme) layout.Dimensions {
 	if t.saveBtn.Clicked(gtx) {
 		t.handleSaveClick(t.url, t.urlInfo)
 	}
@@ -156,7 +165,7 @@ func (t *DownloadCard) downloadableLink(gtx layout.Context, theme *material.Them
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			if !t.downloading {
 				// return layout.Dimensions{Size: image.Point{Y: 20}}
-				return layout.Dimensions{}
+				return layout.Dimensions{} // empty space before downloading begin
 			}
 			bar := material.ProgressBar(theme, float32(t.progressPercent/100))
 			return bar.Layout(gtx)
@@ -182,7 +191,7 @@ func (t *DownloadCard) downloadableLink(gtx layout.Context, theme *material.Them
 }
 
 func (t *DownloadCard) regularLinkHint(gtx layuot.Context, theme *material.Theme) layout.Dimensions {
-	return material.Body1(theme, "This is just a regular link, you can open it using apps below").Laout(gtx)
+	return material.Body1(theme, "This is just a regular link").Laout(gtx)
 }
 
 func (t *DownloadCard) Layout(mgtx uicore.Context) layout.Dimensions {
@@ -198,8 +207,11 @@ func (t *DownloadCard) Layout(mgtx uicore.Context) layout.Dimensions {
 			}),
 			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				
 				if t.urlInfo == nil {
 					return t.loading(gtx, theme)
+				} else if t.downloaded {
+					return t.doneActions(gtx, theme)
 				} else if t.urlInfo.Downloadable {
 					return t.downloadActions(gtx, theme)
 				} else {
