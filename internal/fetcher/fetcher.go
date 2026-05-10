@@ -116,7 +116,7 @@ func (t *ProgressWriter) Write(p []byte) (n int, err error) {
 	// t.progress <- int64(t.written)
 	t.status.ProgressBytes.Add(int64(n))
 
-	time.Sleep(50 * time.Millisecond)
+	// time.Sleep(15 * time.Millisecond)
 	return
 }
 
