@@ -45,6 +45,7 @@ type DownloadCard struct {
 	saveAsBtn   widget.Clickable
 	openBtn     widget.Clickable
 	copyPathBtn widget.Clickable
+	copyUrlBtn  widget.Clickable
 	linkEditor  widget.Editor
 	copyIcon    *widget.Icon
 }
@@ -66,6 +67,7 @@ func NewDownloadCard(s *state.State) (*DownloadCard, func()) {
 	d.copyIcon, _ = widget.NewIcon(assets.IconClipboard)
 
 	d.linkEditor.ReadOnly = true
+	// d.linkEditor.SingleLine = true
 	d.linkEditor.SetText(d.url)
 
 	d.list.List.Axis = layout.Vertical
@@ -148,7 +150,7 @@ func handleOpenFolderClick(dest string) {
 	exec.Command("explorer", "/select,", dest).Run()
 }
 
-func handleCopyPathClick(gtx layout.Context, path string) {
+func copyToClipboard(gtx layout.Context, path string) {
 	gtx.Execute(clipboard.WriteCmd{
 		Type: "text/plain",
 		Data: io.NopCloser(strings.NewReader(path)),
@@ -161,7 +163,7 @@ func (t *DownloadCard) doneActions(gtx layout.Context, theme *material.Theme) la
 	}
 
 	if t.copyPathBtn.Clicked(gtx) {
-		handleCopyPathClick(gtx, t.file.downloadedPath)
+		copyToClipboard(gtx, t.file.downloadedPath)
 	}
 
 	return layout.Flex{}.Layout(gtx,
@@ -224,12 +226,19 @@ func (t *DownloadCard) downloadActions(gtx layout.Context, theme *material.Theme
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			if !t.file.downloading {
 				// return layout.Dimensions{Size: image.Point{Y: 20}}
-				return layout.Dimensions{} // empty space before downloading begin
+				return layout.Dimensions{}
 			}
 			bar := material.ProgressBar(theme, float32(t.file.progressPercent/100))
-			return bar.Layout(gtx)
+
+			return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, bar.Layout)
 		}),
-		layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if !t.file.downloading {
+				return layout.Dimensions{}
+			}
+
+			return layout.Spacer{Height: unit.Dp(8)}.Layout(gtx)
+		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{}.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
@@ -266,12 +275,34 @@ func (t *DownloadCard) Layout(mgtx uicore.Context) layout.Dimensions {
 			Spacing: layout.SpaceStart,
 		}.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				editor := material.Editor(theme, &t.linkEditor, "")
-				// editor.TextSize = unit.Sp(20)
-				return editor.Layout(gtx)
-				// return material.Body1(theme, fmt.Sprintf("Link: %v", t.url)).Layout(gtx)
+				return layout.Flex{
+					Axis: layout.Horizontal,
+				}.Layout(gtx,
+					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+						return material.Editor(theme, &t.linkEditor, "").Layout(gtx)
+					}),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						if t.copyUrlBtn.Clicked(gtx) {
+							copyToClipboard(gtx, t.url)
+						}
+
+						if t.copyUrlBtn.Hovered() {
+							pointer.CursorPointer.Add(gtx.Ops)
+						}
+
+						btn := material.ButtonLayout(theme, &t.copyUrlBtn)
+						btn.Background = uicore.Colors.ButtonIconBg
+
+						return btn.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							return layout.UniformInset(unit.Dp(4)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+								return t.copyIcon.Layout(gtx, uicore.Colors.Black)
+							})
+						})
+					}),
+				)
 			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				if t.urlInfo == nil {
 					return t.loading(gtx, theme)
@@ -286,3 +317,33 @@ func (t *DownloadCard) Layout(mgtx uicore.Context) layout.Dimensions {
 		)
 	})
 }
+
+// func drawOverflowFade(gtx layout.Context) layout.Dimensions {
+// 	fadeWidth := gtx.Dp(24)
+// 	size := gtx.Constraints.Min
+
+// 	// Create a rectangle for the fade area at the right edge
+// 	rect := image.Rect(size.X-fadeWidth, 0, size.X, size.Y)
+
+// 	// Define the gradient
+// 	// Transparent -> Background Color
+// 	cols := [2]color.NRGBA{
+// 		{R: 255, G: 255, B: 255, A: 0},   // Transparent
+// 		{R: 255, G: 255, B: 255, A: 255}, // White (match your BG)
+// 	}
+
+// 	// Setup the gradient operation
+// 	grad := paint.LinearGradientOp{
+// 		Stop1:  layout.FPt(image.Pt(rect.Min.X, 0)),
+// 		Color1: cols[0],
+// 		Stop2:  layout.FPt(image.Pt(rect.Max.X, 0)),
+// 		Color2: cols[1],
+// 	}
+
+// 	// Apply the gradient to the specific area
+// 	defer clip.Rect(rect).Push(gtx.Ops).Pop()
+// 	grad.Add(gtx.Ops)
+// 	paint.PaintOp{}.Add(gtx.Ops)
+
+// 	return layout.Dimensions{Size: size}
+// }

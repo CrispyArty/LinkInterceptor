@@ -9,7 +9,7 @@ var (
 	colorBorderGray = HexToColor("#dadce0")
 	// colorBorderGray = color.NRGBA{0, 220, 0, 255}
 	colorBgLightGray = color.NRGBA{235, 237, 240, 255}
-	colorBgGray      = HexToColor("#cccccc")
+	colorBgGray      = HexToColor("#dddddd")
 	// colorBgLightGray = color.NRGBA{235, 0, 0, 255}
 
 	colorBgDarkGray = HexToColor("#6c757d")

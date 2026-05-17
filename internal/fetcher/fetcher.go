@@ -12,7 +12,7 @@ import (
 	"github.com/crispyarty/LinkInterceptor/internal/logger"
 )
 
-var Client = NewClient(&logger.SQLite{})
+var Client = NewClient(logger.Logger)
 
 func NewClient(logger RequestLogger) *http.Client {
 	customTransport := http.DefaultTransport.(*http.Transport).Clone()
@@ -116,7 +116,7 @@ func (t *ProgressWriter) Write(p []byte) (n int, err error) {
 	// t.progress <- int64(t.written)
 	t.status.ProgressBytes.Add(int64(n))
 
-	// time.Sleep(15 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	return
 }
 

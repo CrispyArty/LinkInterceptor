@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/crispyarty/LinkInterceptor/internal/logger"
 	mSys "github.com/crispyarty/LinkInterceptor/internal/system"
 	"github.com/crispyarty/LinkInterceptor/internal/ui"
 	"github.com/crispyarty/LinkInterceptor/internal/ui/dispatch"
@@ -36,6 +37,7 @@ func run(window *app.Window) (err error) {
 	var eventCh = make(chan event.Event)
 	var acks = make(chan struct{})
 
+	go func() { logger.Logger.LogInit(appUi.State().Caller, appUi.State().Url) }()
 	go fillState(appUi.State())
 
 	go func() {
