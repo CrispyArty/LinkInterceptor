@@ -1,7 +1,6 @@
 package components
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os/exec"
@@ -52,7 +51,6 @@ type DownloadCard struct {
 
 func fetchInfo(d *DownloadCard) {
 	urlInfo, _ := fetcher.GetHeaders(d.url)
-	fmt.Println(urlInfo)
 	dispatch.Actions <- func() {
 		d.urlInfo = urlInfo
 	}
@@ -73,8 +71,6 @@ func NewDownloadCard(s *state.State) (*DownloadCard, func()) {
 	d.list.List.Axis = layout.Vertical
 
 	go fetchInfo(d)
-
-	// unsub := s.Browsers.Items.Subscribe(l.HandleData)
 
 	return d, func() {}
 }
@@ -177,23 +173,12 @@ func (t *DownloadCard) doneActions(gtx layout.Context, theme *material.Theme) la
 		}),
 		layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-
-			btn := material.ButtonLayout(theme, &t.copyPathBtn)
-			// btn := material.IconButton(theme, &t.copyPathBtn, t.copyIcon, "Copy")
-
-			// btn.Background
-			// btn := SecondaryButton(theme, &t.saveAsBtn, "Copy path")
-			btn.Background = uicore.Colors.ButtonIconBg
-
+			btn := SecondaryButton(theme, &t.copyPathBtn, "Copy path")
 			if t.copyPathBtn.Hovered() {
 				pointer.CursorPointer.Add(gtx.Ops)
 			}
 
-			return btn.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				return layout.UniformInset(unit.Dp(7)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return t.copyIcon.Layout(gtx, uicore.Colors.Black)
-				})
-			})
+			return btn.Layout(gtx)
 		}),
 	)
 }
@@ -225,7 +210,6 @@ func (t *DownloadCard) downloadActions(gtx layout.Context, theme *material.Theme
 	}.Layout(gtx,
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			if !t.file.downloading {
-				// return layout.Dimensions{Size: image.Point{Y: 20}}
 				return layout.Dimensions{}
 			}
 			bar := material.ProgressBar(theme, float32(t.file.progressPercent/100))

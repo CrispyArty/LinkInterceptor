@@ -5,8 +5,8 @@ import (
 )
 
 type RequestLogger interface {
-	LogRequest(req *http.Request) (int64, error)
-	LogResponse(reqId int64, resp *http.Response, err error)
+	LogRequest(req *http.Request) <-chan int64
+	LogResponse(reqId <-chan int64, resp *http.Response, reqErr error)
 }
 
 type LoggingTransport struct {
@@ -15,15 +15,11 @@ type LoggingTransport struct {
 }
 
 func (t *LoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	reqId, reqErr := t.Logger.LogRequest(req)
+	reqIdChan := t.Logger.LogRequest(req)
 
-	// start := time.Now()
-	resp, err := t.Next.RoundTrip(req) // Execute the actual request using the wrapped transport
+	resp, err := t.Next.RoundTrip(req)
 
-	if reqErr == nil {
-		// time.Since(start)
-		t.Logger.LogResponse(reqId, resp, err)
-	}
+	t.Logger.LogResponse(reqIdChan, resp, err)
 
 	if err != nil {
 		return nil, err

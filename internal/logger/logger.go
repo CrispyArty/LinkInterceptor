@@ -2,10 +2,10 @@ package logger
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/crispyarty/LinkInterceptor/internal/system"
 	_ "modernc.org/sqlite" // CGO-free driver
 )
 
@@ -16,7 +16,8 @@ type SQLite struct {
 var Logger *SQLite = NewSqlLike()
 
 func NewSqlLike() *SQLite {
-	db, err := sql.Open("sqlite", "test_database.db")
+	db, err := sql.Open("sqlite", system.GetAppDataPath("log_database.sqlite"))
+
 	if err != nil {
 		return nil
 	}
@@ -39,10 +40,8 @@ func NewSqlLike() *SQLite {
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 	`
-
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
 	_, err = db.Exec(query)
-
-	fmt.Println("err", err)
 
 	return &SQLite{
 		db: db,
@@ -57,49 +56,52 @@ func (l *SQLite) LogInit(caller, url string) {
 	l.db.Exec("INSERT INTO visits (caller, url) VALUES (?, ?)", caller, url)
 }
 
-func (l *SQLite) LogRequest(req *http.Request) (int64, error) {
-	res, err := l.db.Exec("INSERT INTO requests (url, method) VALUES (?, ?)", req.URL.String(), req.Method)
+func (l *SQLite) LogRequest(req *http.Request) <-chan int64 {
+	resId := make(chan int64, 1)
 
-	fmt.Println(res)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
+	urlStr := req.URL.String()
+	method := req.Method
 
-	// fmt.Println("!!!!2", res, err)
-	// reqURL := req.URL.String()
-	// reqMethod := req.Method
-	// reqHeader := req.Header.Clone()
+	go func() {
+		defer close(resId)
+		res, e := l.db.Exec("INSERT INTO requests (url, method) VALUES (?, ?)", urlStr, method)
 
-	// LogAction <- func() {
-	// 	t.Logger.LogRequest(reqURL, reqMethod, reqHeader)
-	// }
+		if e != nil {
+			return
+		}
 
-	// fmt.Sprintf("LogRequest: method=%v url=%v\n", req.Method, req.URL.String())
+		id, _ := res.LastInsertId()
+		resId <- id
+	}()
+
+	return resId
 }
 
-func (l *SQLite) LogResponse(reqId int64, resp *http.Response, err error) {
+func (l *SQLite) LogResponse(reqId <-chan int64, resp *http.Response, reqErr error) {
 	errText := ""
-
-	if err != nil {
-		errText = err.Error()
+	if reqErr != nil {
+		errText = reqErr.Error()
 	}
 
-	l.db.Exec(
-		"UPDATE requests SET response_status=?, error=?, updated_at=? WHERE id=:id",
-		resp.StatusCode,
-		errText,
-		time.Now().UTC(),
-		sql.Named("id", reqId),
-	)
+	statusCode := 0
+	if resp != nil {
+		statusCode = resp.StatusCode
+	}
 
-	// duration := time.Since(start)
-	// respStatus := resp.StatusCode
-	// respHeader := resp.Header.Clone()
+	go func() {
+		id, ok := <-reqId
+		if !ok {
+			return
+		}
 
-	// LogAction <- func() {
-	// 	t.Logger.LogResponse(respHeader, respStatus, duration)
-	// }
+		l.db.Exec(
+			"UPDATE requests SET response_status=:status, error=:error, updated_at=:updated_at WHERE id=:id",
+			sql.Named("status", statusCode),
+			sql.Named("error", errText),
+			sql.Named("updated_at", time.Now().UTC()),
+			sql.Named("id", id),
+		)
+	}()
 
 	// headerBytes, err := json.Marshal(resp.Header)
 	// if err != nil {

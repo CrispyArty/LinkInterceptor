@@ -1,7 +1,6 @@
 package components
 
 import (
-	"fmt"
 	"image"
 	"os/exec"
 	"strings"
@@ -25,7 +24,6 @@ type BrowserItem struct {
 	data       system.Browser
 	button     widget.Clickable
 	card       CardButton
-	// onClick    func()
 }
 
 type BrowsersList struct {
@@ -41,7 +39,6 @@ func (t *BrowserItem) Update(data *system.Browser) {
 	t.path = data.Path
 	t.name = data.Name
 	t.shellPath = data.ShellPath
-	// t.icon = &(*data.IconImageOp)
 	t.icon = paint.NewImageOp(data.IconImage)
 }
 
@@ -50,7 +47,7 @@ func (t *BrowserItem) Update(data *system.Browser) {
 // new
 // [{path: 'firefox.exe'}, {path: 'chrome.exe'}, {path: 'ie.exe'}, {path: 'arc.exe'}]
 func (t *BrowsersList) HandleData(data []*system.Browser) {
-	// process data in goroutine
+	// add new data only if versions is not updated
 	v := t.version.Add(1)
 
 	go func(currentVersion int64) {
@@ -72,8 +69,6 @@ func (t *BrowsersList) HandleData(data []*system.Browser) {
 }
 
 func NewBrowsersList(s *state.State) (*BrowsersList, func()) {
-	fmt.Println(s.Url)
-
 	l := &BrowsersList{
 		url:    s.Url,
 		caller: s.Caller,
@@ -89,13 +84,12 @@ func NewBrowsersList(s *state.State) (*BrowsersList, func()) {
 }
 
 func (t *BrowsersList) handleBrowserClick(bi *BrowserItem) {
-	fmt.Printf("path: %v | %v | %v\n", bi.shellPath, t.url, t.caller)
 	cmdStr := bi.shellPath
 	if !strings.Contains(bi.shellPath, "%1") {
 		cmdStr += " %1"
 	}
 
-	cmdStr = strings.Replace(cmdStr, "%1", "https://example.com", 1)
+	cmdStr = strings.Replace(cmdStr, "%1", t.url, 1)
 
 	parts := system.SplitWindowsArgs(cmdStr)
 
@@ -106,13 +100,7 @@ func (t *BrowsersList) handleBrowserClick(bi *BrowserItem) {
 	cmd := exec.Command(parts[0], parts[1:]...)
 
 	// Start the process
-	err := cmd.Start()
-
-	// os.Exit(0)
-
-	fmt.Println(err)
-
-	fmt.Printf("cmd: %v\n", cmd)
+	cmd.Start()
 }
 
 func (t *BrowserItem) layout(gtx layout.Context, theme *material.Theme) layout.Dimensions {

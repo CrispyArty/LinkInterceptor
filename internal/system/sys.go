@@ -3,6 +3,8 @@ package system
 import (
 	"fmt"
 	"image"
+	"os"
+	"path/filepath"
 
 	"gioui.org/op/paint"
 	"github.com/sqweek/dialog"
@@ -15,6 +17,16 @@ type Browser struct {
 	IconImageOp *paint.ImageOp
 	Path        string
 	ShellPath   string
+}
+
+func GetAppDataPath(elem ...string) string {
+	configDir, _ := os.UserConfigDir()
+	parts := append([]string{configDir, "LinkInterceptor"}, elem...)
+	path := filepath.Join(parts...)
+
+	os.MkdirAll(filepath.Dir(path), 0755)
+
+	return path
 }
 
 func OpenDialog(startFilename string) (string, error) {

@@ -88,39 +88,3 @@ func (t Card) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
 		},
 	)
 }
-
-// func (t Card) Layout1(gtx layout.Context, w layout.Widget) layout.Dimensions {
-// 	return layout.Stack{}.Layout(gtx,
-// 		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
-// 			bw := gtx.Dp(t.borderWidth)
-// 			halfBW := bw / 2
-
-// 			r := gtx.Dp(t.radius)
-// 			// r := gtx.Dp(radius) - halfBW
-// 			rect := image.Rectangle{Max: gtx.Constraints.Min}.Inset(halfBW)
-
-// 			rr := clip.RRect{
-// 				Rect: rect,
-// 				NW:   r, NE: r, SE: r, SW: r,
-// 			}
-
-// 			// Background
-// 			paint.FillShape(gtx.Ops, t.bgColor, rr.Op(gtx.Ops))
-
-// 			// Border
-// 			paint.FillShape(gtx.Ops, t.borderColor, clip.Stroke{
-// 				Path:  rr.Path(gtx.Ops),
-// 				Width: float32(bw),
-// 			}.Op())
-
-// 			return layout.Dimensions{Size: gtx.Constraints.Min}
-// 		}),
-// 		layout.Stacked(func(gtx layout.Context) layout.Dimensions {
-// 			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-
-// 			fullInset := t.padding + t.borderWidth
-
-// 			return layout.UniformInset(fullInset).Layout(gtx, w)
-// 		}),
-// 	)
-// }

@@ -193,7 +193,9 @@ func GetBrowsers() ([]*Browser, error) {
 				continue
 			}
 
-			// fmt.Printf("capPath: %v\n", capPath)
+			if progName == "link-interceptor" {
+				continue
+			}
 
 			shellPath, err := getExePathFromProgName(progName)
 

@@ -111,29 +111,23 @@ type ProgressWriter struct {
 
 func (t *ProgressWriter) Write(p []byte) (n int, err error) {
 	n, err = t.writer.Write(p)
-	// t.written += n
-	// fmt.Println(t.written)
-	// t.progress <- int64(t.written)
 	t.status.ProgressBytes.Add(int64(n))
 
-	time.Sleep(10 * time.Millisecond)
+	// time.Sleep(10 * time.Millisecond)
 	return
 }
 
 func StartDownload(url, destPath string) (*DownloadStatus, <-chan error) {
 	status := new(DownloadStatus)
-	// progress := make(chan int64)
 	errs := make(chan error, 1)
 
 	go func() {
-		// defer close(progress)
 		defer close(errs)
 
 		resp, err := Client.Get(url)
 
 		if err != nil {
 			errs <- fmt.Errorf(`Failed to fetch url "%v": %w`, url, err)
-			// log.Println("Error:", err)
 			return
 		}
 		defer resp.Body.Close()
@@ -161,12 +155,6 @@ func StartDownload(url, destPath string) (*DownloadStatus, <-chan error) {
 
 		status.Done.Store(true)
 		status.ProgressBytes.Store(numberOfBytes)
-
-		// log.Printf("numberOfBytes: %v\n", numberOfBytes)
-		// progress <- numberOfBytes
-
-		// file.Write()
-		// resp.Body.Read()
 	}()
 
 	return status, errs
